@@ -1,107 +1,79 @@
 const std = @import("std");
+const ArrayList = std.ArrayList;
 const SmartSoA = @import("SmartSoA").SmartSoA;
+const Writer = std.Io.Writer.Allocating;
 
 pub fn ZigTable(comptime Column: type) type {
+    const Soa = SmartSoA(Column);
+    const ColField = Soa.InnerFieldEnum;
+    
     return struct {
         const Self = @This();
         
         allocator: std.mem.Allocator,
-        rows: std.ArrayList(Column) = .empty,
-        table_data: SmartSoA(Column) = undefined,
-        table_writer: std.Io.Writer.Allocating = undefined,
-        row_writer: std.Io.Writer.Allocating = undefined,
+        table_data: Soa = undefined,
+        table_writer: Writer = undefined,
+        row_queue: ArrayList(usize) = .empty,
+        row_writers: ArrayList(Writer) = .empty,
 
         pub fn init(allocator: std.mem.Allocator) Self {
             var self: Self = .{.allocator = allocator};
 
             self.table_data = .init();
             self.table_writer = .init(allocator);
-            self.row_writer = .init(allocator);
             return self;
         }
 
         pub fn deinit(self: *Self) void {
-            self.rows.deinit(self.allocator);
-            self.table_data.deinit(self.allocator);
+            const allocator = self.allocator;
+            
+            for(self.row_writers.items) |*writer| writer.deinit();
+            self.row_writers.deinit(allocator);
+            self.row_queue.deinit(allocator);
+            self.table_data.deinit(allocator);
             self.table_writer.deinit();
-            self.row_writer.deinit();
         }
 
-        pub fn addRow(self: *Self, row: Column) !void {
+        pub fn addRow(self: *Self, row: Column) !usize {
+            const idx = self.table_data.len;
             try self.table_data.append(self.allocator, row);
+            try self.row_writers.append(self.allocator, .init(self.allocator));
+            try self.row_queue.append(self.allocator, idx);
         }
 
-        pub fn fmt(self: *Self) ![]u8 {
+        pub fn fmt_row(self: *Self, idx: usize, comptime field: ColField, val: anytype) !void {
+            const row_writer = self.row_writers.items[idx];
+            const row_w = &row_writer.writer;
+            
+            try row_w.print("{s} |", .{val});
+        }
+
+        pub fn build(self: *Self) ![]u8 {
+            const column_fields = comptime std.meta.fields(Column);
+            const table_data = &self.table_data;
             const table_writer = &self.table_writer.writer;
-            const col = self.table_data.allItems();
+            const row_writers = &self.row_writers;
             
-            for(0..self.table_data.len) |i| {
-                self.row_writer.clearRetainingCapacity();
-                inline for(std.meta.fields(Column)) |field| {
-                    
+            self.table_writer.clearRetainingCapacity();
+            for(row_writers.items) |*row_writer| row_writer.clearRetainingCapacity();
+            
+            inline for(column_fields) |field| try table_writer.print("{s} |", .{field.name});
+            _ = try table_writer.write("\n");
+            
+            inline for(column_fields) |field| {
+                const field_enum = comptime std.meta.stringToEnum(std.meta.FieldEnum(Column), field.name) orelse unreachable;
+                const col_items = table_data.items(field_enum);
+
+                for(col_items, row_writers.items) |item, *row_writer| {
+                    const row_w = &row_writer.writer;
+                    try row_w.print("{s} |", .{item});
                 }
             }
+
+            for(row_writers.items) |*row_writer| 
+                try table_writer.print("{s}\n", .{row_writer.written()});
             
-            for(self.rows.items) |row| {
-                inline for(fields) |field| {
-                    const T = @TypeOf(@field(row, field.name));
-                    const val: T = @field(row, field.name);
-
-                    try table_writer.print("{s}", .{val});
-                }
-                
-                _ = try table_writer.write("\n");
-            }
-
             return self.table_writer.written();
         }
     };
 }
-
-// fn TableContents(comptime Column: type) type {
-//     const Contents = GenerateContents(Column);
-//     return struct {
-//         const Self = @This();
-//         allocator: std.mem.Allocator,
-//         contents: Contents = undefined,
-
-//         fn init(allocator: std.mem.Allocator) Self {
-//             var self: Self = .{.allocator = allocator};
-//             inline for(std.meta.fields(Contents)) |field| 
-//                 @field(&self.contents, field.name) = .empty;
-
-//             return self;
-//         }
-
-//         fn deinit(self: *Self) void {
-//             inline for(std.meta.fields(Contents)) |field| 
-//                 @field(&self.contents, field.name) = .deinit(self.allocator);
-//         }
-
-        
-//     };
-// }
-
-// fn GenerateContents(comptime Column: type) type {
-//     const fields = std.meta.fields(Column);
-    
-//     var names: [fields.len][]const u8 = undefined;
-//     var types: [fields.len]type = undefined;
-//     var attrs: [fields.len]std.builtin.Type.StructField.Attributes = undefined;
-    
-//     for (fields, 0..) |field, i| {
-//         const T = @FieldType(Column, field.name);
-        
-//         names[i] = field.name;
-//         types[i] = std.ArrayList(T);
-//         attrs[i] = .{};
-//     }
-    
-//     return @Struct(
-//         .auto,
-//         null,
-//         &names,
-//         &types,
-//         &attrs,
-//     );
-// }
