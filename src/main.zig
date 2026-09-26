@@ -64,9 +64,7 @@ fn initColumn(comptime field_count: usize, comptime str_len: usize, allocator: s
     inline for(std.meta.fields(@TypeOf(col))) |field| {
         const string = blk: {
             var str: [str_len]u8 = undefined;
-            for(&str) |*char| {
-                char.* = rand.int(u8);
-            }
+            for(&str) |*char| char.* = rand.intRangeAtMost(u8, '!', '~');
             break :blk str;
         };
         

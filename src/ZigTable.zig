@@ -46,7 +46,7 @@ pub fn ZigTable(comptime Column: type) type {
 
         fn fmtElement(row_writer: *Writer, val: anytype) !void {
             const row_w = &row_writer.writer;
-            try row_w.print("{s} |", .{val});
+            try row_w.print("{s:8}| ", .{val});
         }
 
         pub fn build(self: *Self) !void {
@@ -59,7 +59,7 @@ pub fn ZigTable(comptime Column: type) type {
             self.table_writer.clearRetainingCapacity();
             for(row_writers.items) |*row_writer| row_writer.clearRetainingCapacity();
             
-            inline for(column_fields) |field| try table_writer.print("{s} |", .{field.name});
+            inline for(column_fields) |field| try table_writer.print("{s:8}| ", .{field.name});
             _ = try table_writer.write("\n");
             
             inline for(column_fields) |field| {
