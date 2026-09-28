@@ -3,6 +3,39 @@ const ArrayList = std.ArrayList;
 const SmartSoA = @import("SmartSoA").SmartSoA;
 const Writer = std.Io.Writer.Allocating;
 
+const ColOption = struct{
+    field_name: []const u8,
+    T: type, 
+    space: usize = 0,
+    fmt: []const u8 = "",
+
+    fn init(comptime field_name: []const u8, comptime T: type) ColOption {
+        var opt: ColOption = .{.field_name = field_name, .T = T};
+        opt.fmt = blk: switch(@typeInfo(T)) {
+            .int, comptime_int => break :blk "d",
+            else => {
+                if(isString(T)) break :blk "{s}"
+                else unreachable;
+            },
+        };
+    }
+};
+
+fn isString(comptime T: type) bool {
+    return switch(@typeInfo(T)) {
+        .array => |a| a.child == u8,
+        .pointer => |p| switch(p.size) {
+            .slice => p.child ==  u8,
+            .one => switch(@typeInfo(p.child)) {
+                .array => |a| a.child == u8,
+                else => false,
+            },
+            else => false
+        },
+        else => false
+    };
+}
+
 pub fn ZigTable(comptime Column: type) type {
     const Soa = SmartSoA(Column);
     const ColField = Soa.InnerFieldEnum;
