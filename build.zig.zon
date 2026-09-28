@@ -36,6 +36,10 @@
             .url = "git+https://github.com/austinrtn/SmartSoA.git#f7b9fed7e3762639f89e9159466debee20707317",
             .hash = "smart_soa-0.0.0-eFnK1eCAAABoCVeyrWGWJXjG7vGf0vYdyWebmpvzhNIi",
         },
+        .isString = .{
+            .url = "https://github.com/austinrtn/isstring/archive/refs/tags/1.0.tar.gz",
+            .hash = "isString-0.0.0-qrM7T1QXAADSCqGIx2vitWRL2yLGgbL3Eavn4ECwujXs",
+        },
     },
     .paths = .{
         "build.zig",
