@@ -2,6 +2,7 @@ const std = @import("std");
 const Io = std.Io;
 
 const ZigTable = @import("ZigTable").ZigTable;
+const Formatting = @import("ZigTable").Formatting;
 
 pub fn main(init: std.process.Init) !void {
     var buf: [1028]u8 = undefined;

@@ -5,8 +5,6 @@ const Writer = std.Io.Writer.Allocating;
 
 pub fn ZigTable(comptime Column: type) type {
     const Soa = SmartSoA(Column);
-    const ColField = Soa.InnerFieldEnum;
-    _ = ColField;
     
     return struct {
         const Self = @This();
