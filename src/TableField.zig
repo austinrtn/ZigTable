@@ -5,9 +5,17 @@ const FormatType = Formatting.FormatType;
 const Alignment = Formatting.Alignment;
 
 pub const TableField = struct {
-    T: type,
     name: []const u8,
     fmt_type: FormatType,
+    padding: u32 = 0, 
+    alignment: Alignment = .none,
+};
+
+pub const TableFieldEntry = struct {
+    name: []const u8,
+    fmt_type: FormatType,
+    field_type: type,
+    
     padding: u32 = 0, 
     alignment: Alignment = .none,
 };
