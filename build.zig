@@ -1,4 +1,6 @@
 const std = @import("std");
+const Import = std.Build.Module.Import;
+
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
@@ -11,13 +13,15 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
+    const imports: []const Import = &.{
+        .{ .name = "SmartSoA", .module = smart_soa.module("SmartSoA") },
+        .{ .name = "isString", .module = isString.module("is_string") },
+    };
+    
     const mod = b.addModule("ZigTable", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
-        .imports = &.{
-            .{ .name = "SmartSoA", .module = smart_soa.module("SmartSoA") },
-            .{ .name = "isString", .module = isString.module("is_string") },
-        },
+        .imports = imports,
     });
     
     const exe = b.addExecutable(.{

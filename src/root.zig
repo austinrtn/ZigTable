@@ -3,5 +3,5 @@ pub const ZigTable = @import("ZigTable.zig").ZigTable;
 pub const Formatting = @import("Formatting.zig");
 
 test "root" {
-    _ = Formatting;
+    _ = @import("ZigTable.zig");
 }
