@@ -1,32 +1,32 @@
 const std = @import("std");
+const TableElementT = @import("TableElement.zig").TableElement;
 const Formatting = @import("Formatting.zig");
 const FormatType = Formatting.FormatType;
 const Alignment = Formatting.Alignment;
 
-pub fn TableField(comptime T: type) type {
-    struct {
-        const Self = @This(); 
-        pub const ValueType = T;
-        
-        name: []const u8,
-        impl: struct {
-            val: T,
-            fmt_type: FormatType,
-        
-            padding: u32 = 0, 
-            alignment: Alignment = .none,
-        },
-        
-        pub fn setVal(self: *Self, value: ValueType) void {
-            self.impl.val = value;
-        }
+pub const TableField = struct {
+    T: type,
+    name: []const u8,
+    fmt_type: FormatType,
+    padding: u32 = 0, 
+    alignment: Alignment = .none,
+};
 
-        pub fn setPadding(self: *Self, value: u32) void {
-            self.impl.padding = value;
-        }
+pub fn TableFieldTyped(comptime value_type: type) type {
+    return struct {
+        const Self = @This();
+        const ValueType = value_type;
+        const TableElement = TableElementT(ValueType);
+        table_field: TableField, 
 
-        pub fn setAlignment(self: *Self, value: Alignment) void {
-            self.impl.alignment = value;
+        pub fn init(table_field: TableField) Self {
+            return Self{.table_field = table_field};
         }
     };
+}
+
+pub fn isTableField(comptime table_field: type) void {
+    if(!@hasDecl(table_field, "TableElement")) @compileError(
+        "Invalid type.  Expecting TableElement(T)",
+    );
 }
