@@ -50,7 +50,7 @@ pub const Alignment = enum(u8) {
     right,
 };
 
-const FormatMap = std.StaticStringMap([]const u8).initComptime(.{
+pub const FormatMap = std.StaticStringMap([]const u8).initComptime(.{
     .{"number", "d"},
     .{"hexadecimal_lc", "x"},
     .{"hexadecimal_uc", "X"},
@@ -125,7 +125,7 @@ pub fn Format(comptime format_options: FormatOptions) []const u8 {
         .none => "",
     };
 
-    if(format_options.alignment != .none) output = output ++ "[w]";
+    output = output ++ "[w]";
     if(format_options.perscision) output = output ++ ".[p]";
     output = output ++ "}";
     return output;
@@ -133,21 +133,21 @@ pub fn Format(comptime format_options: FormatOptions) []const u8 {
 
 test "every format type produces its expected placeholder" {
     const cases = [_]struct { format_type: FormatType, expected: []const u8 }{
-        .{ .format_type = .number, .expected = "{[v]d:}" },
-        .{ .format_type = .hexadecimal_lc, .expected = "{[v]x:}" },
-        .{ .format_type = .hexadecimal_uc, .expected = "{[v]X:}" },
-        .{ .format_type = .binary_int, .expected = "{[v]b:}" },
-        .{ .format_type = .sci_not, .expected = "{[v]E:}" },
-        .{ .format_type = .byte_char, .expected = "{[v]c:}" },
-        .{ .format_type = .string, .expected = "{[v]s:}" },
-        .{ .format_type = .utf8, .expected = "{[v]u:}" },
-        .{ .format_type = .base64, .expected = "{[v]b64:}" },
-        .{ .format_type = .tag_name, .expected = "{[v]t:}" },
-        .{ .format_type = .byte_count_decimal, .expected = "{[v]B:}" },
-        .{ .format_type = .byte_count_binary, .expected = "{[v]Bi:}" },
-        .{ .format_type = .ptr_addr, .expected = "{[v]*:}" },
-        .{ .format_type = .custom_format, .expected = "{[v]f:}" },
-        .{ .format_type = .any, .expected = "{[v]any:}" },
+        .{ .format_type = .number, .expected = "{[v]d:[w]}" },
+        .{ .format_type = .hexadecimal_lc, .expected = "{[v]x:[w]}" },
+        .{ .format_type = .hexadecimal_uc, .expected = "{[v]X:[w]}" },
+        .{ .format_type = .binary_int, .expected = "{[v]b:[w]}" },
+        .{ .format_type = .sci_not, .expected = "{[v]E:[w]}" },
+        .{ .format_type = .byte_char, .expected = "{[v]c:[w]}" },
+        .{ .format_type = .string, .expected = "{[v]s:[w]}" },
+        .{ .format_type = .utf8, .expected = "{[v]u:[w]}" },
+        .{ .format_type = .base64, .expected = "{[v]b64:[w]}" },
+        .{ .format_type = .tag_name, .expected = "{[v]t:[w]}" },
+        .{ .format_type = .byte_count_decimal, .expected = "{[v]B:[w]}" },
+        .{ .format_type = .byte_count_binary, .expected = "{[v]Bi:[w]}" },
+        .{ .format_type = .ptr_addr, .expected = "{[v]*:[w]}" },
+        .{ .format_type = .custom_format, .expected = "{[v]f:[w]}" },
+        .{ .format_type = .any, .expected = "{[v]any:[w]}" },
     };
 
     try std.testing.expectEqual(std.meta.fields(FormatType).len, cases.len);
@@ -158,17 +158,17 @@ test "every format type produces its expected placeholder" {
 
 test "modifiers and alignment produce their expected placeholders" {
     const cases = [_]struct { options: FormatOptions, expected: []const u8 }{
-        .{ .options = .{ .format_type = .number, .modifier = .none }, .expected = "{[v]d:}" },
-        .{ .options = .{ .format_type = .number, .modifier = .err_union }, .expected = "{[v]!d:}" },
-        .{ .options = .{ .format_type = .number, .modifier = .optional }, .expected = "{[v]?d:}" },
-        .{ .options = .{ .format_type = .number, .modifier = .optional_err_union }, .expected = "{[v]?!d:}" },
-        .{ .options = .{ .format_type = .number, .modifier = .err_union_optional }, .expected = "{[v]!?d:}" },
-        .{ .options = .{ .format_type = .string, .alignment = .none }, .expected = "{[v]s:}" },
+        .{ .options = .{ .format_type = .number, .modifier = .none }, .expected = "{[v]d:[w]}" },
+        .{ .options = .{ .format_type = .number, .modifier = .err_union }, .expected = "{[v]!d:[w]}" },
+        .{ .options = .{ .format_type = .number, .modifier = .optional }, .expected = "{[v]?d:[w]}" },
+        .{ .options = .{ .format_type = .number, .modifier = .optional_err_union }, .expected = "{[v]?!d:[w]}" },
+        .{ .options = .{ .format_type = .number, .modifier = .err_union_optional }, .expected = "{[v]!?d:[w]}" },
+        .{ .options = .{ .format_type = .string, .alignment = .none }, .expected = "{[v]s:[w]}" },
         .{ .options = .{ .format_type = .string, .alignment = .left }, .expected = "{[v]s:<[w]}" },
         .{ .options = .{ .format_type = .string, .alignment = .center }, .expected = "{[v]s:^[w]}" },
         .{ .options = .{ .format_type = .string, .alignment = .right }, .expected = "{[v]s:>[w]}" },
         .{ .options = .{ .format_type = .string, .modifier = .optional_err_union, .alignment = .center }, .expected = "{[v]?!s:^[w]}" },
-        .{ .options = .{ .format_type = .number, .perscision = true }, .expected = "{[v]d:.[p]}" },
+        .{ .options = .{ .format_type = .number, .perscision = true }, .expected = "{[v]d:[w].[p]}" },
         .{ .options = .{ .format_type = .number, .alignment = .right, .perscision = true }, .expected = "{[v]d:>[w].[p]}" },
     };
 
@@ -180,7 +180,7 @@ test "modifiers and alignment produce their expected placeholders" {
 test "generated placeholders format values" {
     try std.testing.expectEqualStrings(
         "42",
-        std.fmt.comptimePrint(Format(.{ .format_type = .number }), .{ .v = 42 }),
+        std.fmt.comptimePrint(Format(.{ .format_type = .number }), .{ .v = 42, .w = 0 }),
     );
     try std.testing.expectEqualStrings(
         "    3.14",
